@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Contracts\Events\Dispatcher;
 use Laravel\Horizon\Connectors\RedisConnector;
+use Laravel\Horizon\Console\WorkCommand;
 
 class HorizonServiceProvider extends ServiceProvider
 {
@@ -21,6 +22,7 @@ class HorizonServiceProvider extends ServiceProvider
     {
         $this->registerEvents();
         $this->registerRoutes();
+        $this->registerRedisAlias();
         $this->registerResources();
         $this->defineAssetPublishing();
     }
@@ -42,6 +44,18 @@ class HorizonServiceProvider extends ServiceProvider
     }
 
     /**
+     * Register redis factory.
+     *
+     * @return void
+     */
+    protected function registerRedisAlias()
+    {
+        $this->app->alias('redis', \Illuminate\Contracts\Redis\Factory::class);
+
+        $this->app->make('redis');
+    }
+
+    /**
      * Register the Horizon routes.
      *
      * @return void
@@ -52,12 +66,24 @@ class HorizonServiceProvider extends ServiceProvider
             'domain' => config('horizon.domain', null),
             'prefix' => config('horizon.path'),
             'namespace' => 'Laravel\Horizon\Http\Controllers',
-            'middleware' => config('horizon.middleware', 'web'),
         ], function () {
             $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
         });
     }
 
+    /**
+     * Register the custom queue connectors for Horizon.
+     *
+     * @return void
+     */
+    protected function registerQueueConnectors()
+    {
+        $this->app->resolving(QueueManager::class, function ($manager) {
+            $manager->addConnector('redis', function () {
+                return new RedisConnector($this->app['redis']);
+            });
+        });
+    }
     /**
      * Register the Horizon resources.
      *
@@ -81,20 +107,6 @@ class HorizonServiceProvider extends ServiceProvider
     }
 
     /**
-     * Register the custom queue connectors for Horizon.
-     *
-     * @return void
-     */
-    protected function registerQueueConnectors()
-    {
-        $this->app->resolving(QueueManager::class, function ($manager) {
-            $manager->addConnector('redis', function () {
-                return new RedisConnector($this->app['redis']);
-            });
-        });
-    }
-
-    /**
      * Register any application services.
      *
      * @return void
@@ -108,6 +120,7 @@ class HorizonServiceProvider extends ServiceProvider
         $this->configure();
         $this->offerPublishing();
         $this->registerServices();
+        $this->registerQueueWorkCommand();
         $this->registerCommands();
         $this->registerQueueConnectors();
     }
@@ -145,6 +158,18 @@ class HorizonServiceProvider extends ServiceProvider
     }
 
     /**
+     * Register the command instance.
+     *
+     * @return void
+     */
+    protected function registerQueueWorkCommand()
+    {
+        $this->app->singleton(WorkCommand::class, function ($app) {
+            return new WorkCommand($app['queue.worker']);
+        });
+    }
+
+    /**
      * Register Horizon's services in the container.
      *
      * @return void
@@ -153,8 +178,8 @@ class HorizonServiceProvider extends ServiceProvider
     {
         foreach ($this->serviceBindings as $key => $value) {
             is_numeric($key)
-                    ? $this->app->singleton($value)
-                    : $this->app->singleton($key, $value);
+                ? $this->app->singleton($value)
+                : $this->app->singleton($key, $value);
         }
     }
 

@@ -2,36 +2,41 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('api')->group(function () {
-    // Dashboard Routes...
-    Route::get('/stats', 'DashboardStatsController@index')->name('horizon.stats.index');
 
-    // Workload Routes...
-    Route::get('/workload', 'WorkloadController@index')->name('horizon.workload.index');
-
-    // Master Supervisor Routes...
-    Route::get('/masters', 'MasterSupervisorController@index')->name('horizon.masters.index');
-
-    // Monitoring Routes...
-    Route::get('/monitoring', 'MonitoringController@index')->name('horizon.monitoring.index');
-    Route::post('/monitoring', 'MonitoringController@store')->name('horizon.monitoring.store');
-    Route::get('/monitoring/{tag}', 'MonitoringController@paginate')->name('horizon.monitoring-tag.paginate');
-    Route::delete('/monitoring/{tag}', 'MonitoringController@destroy')->name('horizon.monitoring-tag.destroy');
-
-    // Job Metric Routes...
-    Route::get('/metrics/jobs', 'JobMetricsController@index')->name('horizon.jobs-metrics.index');
-    Route::get('/metrics/jobs/{id}', 'JobMetricsController@show')->name('horizon.jobs-metrics.show');
-
-    // Queue Metric Routes...
-    Route::get('/metrics/queues', 'QueueMetricsController@index')->name('horizon.queues-metrics.index');
-    Route::get('/metrics/queues/{id}', 'QueueMetricsController@show')->name('horizon.queues-metrics.show');
-
-    // Job Routes...
-    Route::get('/jobs/recent', 'RecentJobsController@index')->name('horizon.recent-jobs.index');
-    Route::get('/jobs/failed', 'FailedJobsController@index')->name('horizon.failed-jobs.index');
-    Route::get('/jobs/failed/{id}', 'FailedJobsController@show')->name('horizon.failed-jobs.show');
-    Route::post('/jobs/retry/{id}', 'RetryController@store')->name('horizon.retry-jobs.show');
+// Dashboard Routes...
+Route::group(['prefix'=>'api'],function(){
+    Route::get('/stats', ['as'=>'horizon.stats.index','uses'=>'DashboardStatsController@index']);
+//
+//// Workload Routes...
+    Route::get('/workload', ['as'=>'horizon.workload.index','uses'=>'WorkloadController@index']);
+//
+//// Master Supervisor Routes...
+    Route::get('/masters', ['as'=>'horizon.masters.index','uses'=>'MasterSupervisorController@index']);
+//
+//// Monitoring Routes...
+    Route::get('/monitoring', ['as'=>'horizon.monitoring.index','uses'=>'MonitoringController@index']);
+    Route::post('/monitoring', ['as'=>'horizon.monitoring.store','uses'=>'MonitoringController@store']);
+    Route::get('/monitoring/{tag}', ['as'=>'horizon.monitoring-tag.paginate','uses'=>'MonitoringController@paginate']);
+    Route::delete('/monitoring/{tag}', ['as'=>'horizon.monitoring-tag.destroy','uses'=>'MonitoringController@destroy']);
+//
+//// Job Metric Routes...
+    Route::get('/metrics/jobs', ['as'=>'horizon.jobs-metrics.index','uses'=>'JobMetricsController@index']);
+    Route::get('/metrics/jobs/{id}', ['as'=>'horizon.jobs-metrics.show','uses'=>'JobMetricsController@show']);
+//
+//// Queue Metric Routes...
+    Route::get('/metrics/jobs', ['as'=>'horizon.queues-metrics.index','uses'=>'QueueMetricsController@index']);
+    Route::get('/metrics/jobs/{id}', ['as'=>'horizon.queues-metrics.show','uses'=>'QueueMetricsController@show']);
+//
+//// Job Routes...
+    Route::get('/jobs/recent', ['as'=>'horizon.recent-jobs.index','uses'=>'RecentJobsController@index']);
+    Route::get('/jobs/failed', ['as'=>'horizon.failed-jobs.index','uses'=>'FailedJobsController@index']);
+    Route::get('/jobs/failed/{id}', ['as'=>'horizon.failed-jobs.show','uses'=>'FailedJobsController@show']);
+    Route::post('/jobs/retry/{id}', ['as'=>'horizon.retry-jobs.show','uses'=>'RetryController@store']);
 });
 
-// Catch-all Route...
-Route::get('/{view?}', 'HomeController@index')->where('view', '(.*)')->name('horizon.index');
+//
+//// Catch-all Route...
+//Route::get('/{view?}', 'HomeController@index')->where('view', '(.*)')->name('horizon.index');
+Route::get('/{view?}', ['as'=>'horizon.index','uses'=>'HomeController@index'],function($api){
+    $api->where('view','(.*)');
+});
