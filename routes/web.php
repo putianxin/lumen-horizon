@@ -37,6 +37,4 @@ Route::group(['prefix'=>'api'],function(){
 //
 //// Catch-all Route...
 //Route::get('/{view?}', 'HomeController@index')->where('view', '(.*)')->name('horizon.index');
-Route::get('/{view?}', ['as'=>'horizon.index','uses'=>'HomeController@index'],function($api){
-    $api->where('view','(.*)');
-});
+Route::get('/dashboard', ['as'=>'horizon.index','uses'=>'HomeController@index']);
